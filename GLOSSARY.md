@@ -51,6 +51,10 @@ _Vermeiden_: Runde, Satz, Session
 Die wievielte Fokusphase des aktuellen Zyklus gerade dran ist (z. B. 2 von 4).
 _Vermeiden_: Zähler
 
+**Überzeit**:
+Die Zeit, die seit dem Ablauf einer Phase vergangen ist, während die nächste Phase bereit ist und noch nicht gestartet wurde; sie wird nur angezeigt und wirkt nicht auf den Ablauf.
+_Vermeiden_: Nachlauf, Verzug
+
 **Überspringen**:
 Die aktuelle Phase sofort beenden und zur nächsten übergehen; eine übersprungene Fokusphase zählt für den Zyklus-Fortschritt wie eine abgelaufene.
 

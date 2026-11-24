@@ -15,3 +15,5 @@ Was legt ein Theme fest (Farben je Phase, Hintergrund-Transparenz, Schrift, Grö
 ## Kontext
 
 - Aus [GUI-Technik für das Overlay](01-gui-technik.md): Transparenz pro Pixel (Hintergrund durchsichtig, Text deckend) hängt von Renderer/GPU ab; eine einheitliche Fenster-Deckkraft (`SetLayeredWindowAttributes`) ist überall sicher. Entscheiden, ob einheitliche Deckkraft für v1 reicht. Ergebnis von [Overlay-Spike mit der gewählten Technik](02-overlay-spike.md) beachten.
+
+> Kontext aus *[Bedienung](04-bedienung.md)*: Das gemeinsame Menü (Overlay und Tray) enthält einen Eintrag **Theme ▸**. Wie das Untermenü aussieht (Liste der Themes mit Häkchen?), wird hier entschieden.

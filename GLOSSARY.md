@@ -12,6 +12,14 @@ _Vermeiden_: Widget, Popup, Hauptfenster
 Ein an- und abschaltbarer Modus, in dem das Overlay über allen anderen Fenstern liegt; ausgeschaltet verhält es sich wie ein normales randloses Fenster.
 _Vermeiden_: Always-on-top-Fenster, Pin-Modus
 
+**Ausgeblendet**:
+Das Overlay ist nicht sichtbar, die App und der Ablauf laufen weiter; erreichbar bleibt sie über das Tray-Icon.
+_Vermeiden_: minimiert, versteckt
+
+**Click-through**:
+Ein an- und abschaltbarer Modus, in dem Mausklicks durch das Overlay hindurch beim Fenster darunter ankommen; das Overlay selbst ist dann mit der Maus nicht erreichbar.
+_Vermeiden_: Durchklicken, Ghost-Modus
+
 **Phase**:
 Ein zeitlich begrenzter Abschnitt des Pomodoro-Ablaufs; entweder Fokusphase, kurze Pause oder lange Pause.
 _Vermeiden_: Session, Intervall, Runde
@@ -45,6 +53,9 @@ _Vermeiden_: Zähler
 
 **Überspringen**:
 Die aktuelle Phase sofort beenden und zur nächsten übergehen; eine übersprungene Fokusphase zählt für den Zyklus-Fortschritt wie eine abgelaufene.
+
+**Primäraktion**:
+Die je nach Zustand passende Hauptaktion: aus *bereit* Starten, aus *läuft* Anhalten, aus *angehalten* Fortsetzen.
 
 **Phase zurücksetzen**:
 Die aktuelle Phase erhält wieder ihre volle Dauer und ist bereit; der Zyklus-Fortschritt bleibt.

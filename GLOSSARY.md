@@ -58,6 +58,10 @@ _Vermeiden_: Nachlauf, Verzug
 **Überspringen**:
 Die aktuelle Phase sofort beenden und zur nächsten übergehen; eine übersprungene Fokusphase zählt für den Zyklus-Fortschritt wie eine abgelaufene.
 
+**Hinweis**:
+Die Meldung, dass die Restzeit einer Phase abgelaufen ist, per Ton, Aufblinken des Overlays und Tray-Icon; vom Nutzer selbst ausgelöste Wechsel (Überspringen, Starten, Zurücksetzen) erzeugen keinen.
+_Vermeiden_: Benachrichtigung, Alarm, Wecker
+
 **Primäraktion**:
 Die je nach Zustand passende Hauptaktion: aus *bereit* Starten, aus *läuft* Anhalten, aus *angehalten* Fortsetzen.
 

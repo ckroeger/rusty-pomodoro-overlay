@@ -19,3 +19,5 @@ Startet die App mit Windows (Autostart, optional?), wird nur eine Instanz zugela
 > Kontext aus *[Bedienung](04-bedienung.md)*: Beendet wird über **Beenden** im gemeinsamen Menü, ohne Tastenkürzel. Zu klären ist, ob *ausgeblendet* und *Click-through* einen Neustart überdauern. Startet die App mit aktivem Click-through oder ausgeblendet, ist sie nur über das Tray-Icon erreichbar.
 
 > Kontext aus *[Crates für Tray-Icon und gemeinsames Menü](11-tray-und-menue-crates.md)*: `tray-icon` verhindert **keine zweite Instanz**, dann gäbe es zwei Tray-Icons. Single-Instance muss die App selbst lösen. Das Tray-Icon verschwindet erst, wenn `TrayIcon` gedroppt wird. Bei einem Absturz mit `panic = "abort"` bleibt ein totes Icon stehen, bis man mit der Maus darüberfährt.
+
+> Kontext aus *[Hinweis bei Phasenwechsel](06-phasenwechsel-hinweis.md)*: Wird der Timer-Stand beim Start nachgeholt und sind dabei Phasen abgelaufen, kommt **genau ein** Hinweis, passend zum letzten verpassten Übergang (wie nach Standby). Es gibt keinen Toast, eine eigene AppUserModelID ist dafür also nicht nötig.

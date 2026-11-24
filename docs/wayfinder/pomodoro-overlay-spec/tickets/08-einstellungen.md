@@ -19,3 +19,5 @@ Wo und wie werden Einstellungen (Dauern, Theme, Immer-im-Vordergrund, Position, 
 > Kontext aus *[Bedienung](04-bedienung.md)*: Das gemeinsame Menü enthält **Einstellungen …**. Was dieser Eintrag öffnet (Datei im Editor, eigenes Fenster), wird hier entschieden. Die Menü-Schalter *Immer im Vordergrund*, *Click-through* und *Overlay anzeigen* sind Kandidaten für gespeicherte Einstellungen.
 
 > Kontext aus *[Inhalt und Verhalten des Overlays](05-overlay-anzeige.md)*: Zu speichern sind außerdem die **Position** des Overlays (virtuelle Bildschirmkoordinaten, nach jedem Verschieben) und die **Skalierung** (50 % bis 300 %, nach jeder Änderung per `Strg`+Mausrad). Einen Regler für die Größe gibt es nicht, sie wird nur über das Mausrad geändert.
+
+> Kontext aus *[Hinweis bei Phasenwechsel](06-phasenwechsel-hinweis.md)*: Drei weitere Einstellungen: *Ton* (an), *Signal im Overlay* (an), *Overlay bei Phasenwechsel einblenden* (aus). *Ton* gibt es zusätzlich als Häkchen im gemeinsamen Menü, ändert man es dort, muss es gespeichert werden. Eine Lautstärke wird nicht gespeichert.

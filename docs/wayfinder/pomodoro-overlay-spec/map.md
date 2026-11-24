@@ -30,12 +30,13 @@ Eine `SPEC.md` (plus `GLOSSARY.md` und ADRs nur für schwer umkehrbare Entscheid
 - [GUI-Technik für das Overlay](tickets/01-gui-technik.md): Empfehlung eframe/egui 0.37 mit glow-Renderer (alle Overlay-Features nativ, klein); Zweitplatz slint; Transparenz und Click-through im Spike prüfen.
 - [Overlay-Spike mit der gewählten Technik](tickets/02-overlay-spike.md): eframe/egui 0.37 + glow bestätigt. Alpha pro Pixel, einheitliche Deckkraft, Immer-im-Vordergrund zur Laufzeit, Drag und Click-through funktionieren; 4,7 MB. RAM ~168 MB auf NVIDIA vs. ~94 MB auf iGPU.
 - [iGPU für das Overlay bevorzugen](tickets/10-igpu-bevorzugen.md): Kein Eingriff durch die App. Ein Doku-Hinweis auf die Windows-Grafikeinstellung „Energiesparmodus“ plus Anzeige des `GL_RENDERER` genügt (Optimus-Symbole können nur die dGPU anfordern, glutin/eframe haben keine Adapter-Wahl); optional später ein ausdrücklicher Befehl `--prefer-igpu`, der `UserGpuPreferences` (HKCU, undokumentiert) setzt.
+- [Phasenablauf](tickets/03-phasenablauf.md): 25/5/15 und 4 pro Zyklus sind Voreinstellungen, konfigurierbar (ganze Minuten 1 bis 180, 1 bis 12 Fokusphasen pro Zyklus). Zustände läuft/angehalten/bereit. Je Richtung ein Schalter für automatischen Start (Voreinstellung: Pause automatisch, Fokus wartet). Überspringen in jedem Zustand, zählt mit. Getrennt: Phase zurücksetzen und Neu beginnen. Überzeit nur angezeigt. Wanduhr inkl. Standby. Änderungen ab nächster Phase bzw. nächstem Zyklus.
 
 ## Not yet specified
 
 - **Begleit-Crates** für Tray-Icon, globale Hotkeys, Windows-Benachrichtigungen, Ton, Single-Instance, Autostart: welche konkret, hängt davon ab, was *Bedienung* und *Hinweis bei Phasenwechsel* entscheiden. Vermutlich ein oder mehrere Research-Tickets.
 - **ADR zur GUI-Technik**: Inhalt steht (Recherche, Spike, GPU-Wahl aus *iGPU für das Overlay bevorzugen*). Geschrieben wird es beim Zusammenschreiben der SPEC.md.
-- **Architektur der App**: Trennung Timer-Logik / UI / Konfiguration, Testbarkeit der Timer-Logik; erst greifbar, wenn Technik und Bedienung entschieden sind.
+- **Architektur der App**: Trennung Timer-Logik / UI / Konfiguration, Testbarkeit der Timer-Logik (injizierbare Uhr, siehe *Phasenablauf*); erst greifbar, wenn Technik und Bedienung entschieden sind.
 - **Zusammenschreiben der SPEC.md**: Gliederung und finale Konsolidierung aller Entscheidungen; letzter Schritt vor dem Ziel.
 
 ## Out of scope

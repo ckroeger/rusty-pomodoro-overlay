@@ -11,3 +11,7 @@ blocked_by: [04]
 ## Question
 
 Wo und wie werden Einstellungen (Dauern, Theme, Immer-im-Vordergrund, Position, …) gespeichert (z. B. TOML unter `%APPDATA%`), werden sie nur per Datei bearbeitet oder auch über eine Oberfläche, und werden Änderungen zur Laufzeit übernommen?
+
+## Kontext
+
+- Aus *[Phasenablauf](03-phasenablauf.md)*: Zu den Einstellungen gehören die drei Dauern (ganze Minuten, 1 bis 180), *Fokusphasen pro Zyklus* (1 bis 12) und zwei Schalter für den automatischen Start (Fokus→Pause, Pause→Fokus). Bei ungültigen Werten gilt die Voreinstellung mit Hinweis; **wie** der Hinweis erscheint, wird hier entschieden. Geänderte Werte gelten erst ab der nächsten Phase dieses Typs bzw. ab dem nächsten Zyklus.

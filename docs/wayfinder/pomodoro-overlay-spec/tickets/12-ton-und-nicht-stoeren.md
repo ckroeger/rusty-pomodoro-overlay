@@ -32,7 +32,7 @@ Ergebnis: Empfehlung mit Begründung für beide Teile.
 
 **„Nicht stören“: direkt vor dem Ton `SHQueryUserNotificationState` (`windows-sys`, Feature `Win32_UI_Shell`, ~0,08 ms) abfragen. Kein Ton bei `QUNS_BUSY` (Vollbild-App oder Präsentationseinstellungen), `QUNS_RUNNING_D3D_FULL_SCREEN` und `QUNS_PRESENTATION_MODE`, sonst spielen (auch bei Fehler).**
 - Das eigentliche **Bitte nicht stören von Windows 11 ist nicht dokumentiert abfragbar** und wird darum nach der Regel aus *Hinweis bei Phasenwechsel* ignoriert. `QUNS_QUIET_TIME` meint nur die erste Stunde nach Ersteinrichtung oder OS-Upgrade, nicht *Bitte nicht stören*. Erkannt werden also nur einige Situationen, in denen Windows es automatisch einschaltet (Vollbild, Spiel), nicht der Schalter selbst.
-- `QUNS_NOT_PRESENT` (gesperrt, Bildschirmschoner), `QUNS_QUIET_TIME` und `QUNS_APP` unterdrücken nicht: abwesend heißt nicht beschäftigt.
+- `QUNS_NOT_PRESENT` (gesperrt, Bildschirmschoner), `QUNS_QUIET_TIME` und `QUNS_APP` unterdrücken nicht: abwesend heißt nicht beschäftigt (vom Nutzer bestätigt).
 - Für Vollbild gibt es keine Änderungsnachricht, also jedes Mal neu fragen und nicht zwischenspeichern.
 - **Verworfen:** `FocusSessionManager.IsFocusActive` (WinRT, dokumentiert, läuft auch ohne Paket, ~0,7 ms) meldet nur *Fokussitzungen* und bräuchte zusätzlich das `windows`-Crate, bleibt Option für später. `UserNotificationListener` hat keinen solchen Zustand. WNF ist undokumentiert.
 

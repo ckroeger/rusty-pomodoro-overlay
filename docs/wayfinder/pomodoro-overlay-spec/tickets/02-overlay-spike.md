@@ -31,4 +31,4 @@ Bestätigt ein Wegwerf-Prototyp mit dem in *GUI-Technik für das Overlay* empfoh
 - `eframe = { version = "0.37", default-features = false, features = ["glow", "default_fonts"] }` reicht. Für HWND-Zugriff kommen `raw-window-handle` 0.6 (`eframe::Frame` implementiert `HasWindowHandle`) und `windows-sys` dazu.
 - **API-Änderung in 0.37:** `eframe::App` verlangt `fn ui(&mut self, ui: &mut egui::Ui, frame)` statt `update`. `CentralPanel::show` nimmt `&mut Ui`, `Id::new` ist deprecated (`Id::unique`/`IdSalt`). Die Recherche-Beispiele mit `update` sind veraltet.
 
-Prototyp (Wegwerf-Code, kein git vorhanden, deshalb neben der Karte abgelegt): [prototypes/02-overlay-spike](../prototypes/02-overlay-spike/), Start mit `cargo run --release` im Ordner.
+Prototyp (Wegwerf-Code, nicht auf `main`): Branch `prototype/02-overlay-spike`, Ordner `docs/wayfinder/pomodoro-overlay-spec/prototypes/02-overlay-spike/`. Start: `git switch prototype/02-overlay-spike`, dann im Ordner `cargo run --release`.

@@ -70,7 +70,7 @@ Primärquelle: GPUOpen, Ken Mitchell, *Selecting the Best Graphics Device to Run
 
 ## 3. Adapter-Wahl in glutin / egui_glow / winit
 
-Geprüft im Quellcode (Cargo-Registry, Versionen aus `prototypes/02-overlay-spike/Cargo.lock`):
+Geprüft im Quellcode (Cargo-Registry, Versionen aus `prototypes/02-overlay-spike/Cargo.lock` auf Branch `prototype/02-overlay-spike`):
 
 - **glutin 0.32.3, WGL** (`src/api/wgl/display.rs`, `config.rs`): `Display::new` lädt per `LoadLibraryW` die `opengl32.dll` bzw. die DLL aus der Umgebungsvariable **`GLUTIN_WGL_OPENGL_DLL`**. Die Config-Vorlage kennt nur `hardware_accelerated` (→ `PFD_GENERIC_ACCELERATED`/`PFD_GENERIC_FORMAT` bzw. `WGL_ACCELERATION_ARB` = `FULL_`/`NO_ACCELERATION_ARB`). Es gibt **keinen Code für Adapter oder GPU-Affinität** (weder `WGL_NV_gpu_affinity` noch `WGL_AMD_gpu_association`, Suche nach `gpu`/`adapter`/`affinity` ohne Treffer). Beide Erweiterungen gäbe es ohnehin nur auf Quadro/FirePro, und keine kann bei Optimus auf die Intel-GPU wechseln.
 - **glutin-winit 0.5.0**: keine Adapter-Optionen (Suche ohne Treffer).

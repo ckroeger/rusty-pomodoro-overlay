@@ -16,12 +16,13 @@ Eine `SPEC.md` (plus `GLOSSARY.md` und ADRs nur für schwer umkehrbare Entscheid
 - Sprache: Deutsch. Beim Grilling **immer nur eine Frage pro Nachricht**.
 - Skills pro Session: `grilling` + `domain-modeling` (Glossar inline pflegen); `research` für Research-Tickets; `prototype` für Prototyp-Tickets.
 - Verteilung: nur `cargo build` / `cargo install`, kein Installer.
-- **Tracker = lokales Markdown** (kein git-Repo, kein Issue-Tracker):
+- **Tracker = lokales Markdown** im git-Repo (kein Issue-Tracker, kein Remote):
   - Karte: diese Datei. Tickets: `tickets/NN-<slug>.md`; die Nummer `NN` ist die ID.
   - Frontmatter je Ticket: `title`, `labels` (`wayfinder:<type>`), `status` (`open`/`closed`), `assignee` (leer = nicht geclaimt; Claim = `ckr` eintragen, **vor** jeder Arbeit), `blocked_by` (Liste von Ticket-IDs).
   - Frontier = `status: open`, `assignee` leer, alle `blocked_by` geschlossen. Reihenfolge = Ticket-Nummer.
   - Auflösung: Abschnitt `## Resolution` ans Ticket anhängen, `status: closed`, eine Zeile unter *Decisions so far*.
   - Research-Ergebnisse liegen unter `research/`, verlinkt aus dem Ticket.
+  - Prototypen sind Wegwerf-Code auf einem eigenen Branch `prototype/<NN>-<slug>` (nie auf `main`), verlinkt aus dem Ticket.
 
 ## Decisions so far
 

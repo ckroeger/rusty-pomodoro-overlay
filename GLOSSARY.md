@@ -29,8 +29,18 @@ Die Phase konzentrierten Arbeitens (klassisch 25 Minuten).
 _Vermeiden_: Pomodoro (als Phasenname), Arbeitsphase, Sprint
 
 **Theme**:
-Ein benannter Satz visueller Einstellungen für das Overlay (z. B. Farben, Transparenz).
+Ein benannter Satz visueller Einstellungen für das Overlay: Akzentfarbe je Phase, Hintergrund mit Deckkraft, Vordergrund- und gedämpfte Farbe, optional ein Hintergrundbild und ein Tray-Zeichen. Layout, Schrift und Größe gehören nicht dazu.
 _Vermeiden_: Skin, Stil
+
+**Eingebautes Theme**:
+Ein mit der App ausgeliefertes, nicht änderbares Theme (*Dunkel*, *Hell*).
+
+**Eigenes Theme**:
+Ein vom Nutzer als Datei angelegtes Theme; was es nicht festlegt, übernimmt es von *Dunkel*.
+_Vermeiden_: Custom-Theme, Benutzer-Theme
+
+**Akzentfarbe**:
+Die Farbe, an der man die aktuelle Phase erkennt; jedes Theme hat eine je Phase.
 
 **Läuft**:
 Zustand der aktuellen Phase, in dem ihre Restzeit abläuft.

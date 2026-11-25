@@ -2,7 +2,7 @@
 title: Architektur der App
 labels: [wayfinder:grilling]
 status: open
-assignee:
+assignee: ckr
 blocked_by: [14]
 ---
 

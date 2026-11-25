@@ -19,5 +19,5 @@ In welche Module zerfällt die App, und wo verlaufen die Nähte? Kandidaten sind
 - Aus *[Inhalt und Verhalten des Overlays](05-overlay-anzeige.md)*: Das Zeichnen bekommt die Anzeigedaten als einen Datensatz, getrennt von der Timer-Logik, damit spätere frei gestaltbare Layouts möglich bleiben.
 - Aus *[Einstellungen und Speichern](08-einstellungen.md)*: Das Einstellungsfenster ist ein zweiter Viewport derselben App. Die Konfiguration wird im Sekundentakt am Änderungszeitpunkt neu geladen, geschrieben wird verzögert, atomar und mit `toml_edit`.
 - Aus *[Lebenszyklus der App](09-lebenszyklus.md)*: Es wird kein Timer-Stand gespeichert. Es gibt eine Instanz (Mutex und Event), Autostart über `HKCU\…\Run`.
-- Ergebnis von *[Sekundentakt bei ausgeblendetem Overlay](14-sekundentakt-im-hintergrund.md)* abwarten: Es bestimmt den Taktgeber.
+- Aus *[Sekundentakt bei ausgeblendetem Overlay](14-sekundentakt-im-hintergrund.md)*: Taktgeber ist `request_repaint_after` aus `App::logic` heraus, das auch versteckt jede Sekunde läuft. `logic` wird sichtbar aber auch viel öfter aufgerufen und muss deshalb beliebig oft aufrufbar sein (Fälligkeiten gegen die Uhr prüfen, nichts zählen). `Instant` zählt den Standby mit.
 - Skill `codebase-design` für das Vokabular (tiefe Module, Nähte) hinzuziehen.

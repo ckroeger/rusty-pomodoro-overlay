@@ -5,8 +5,16 @@ Ein persönlicher Pomodoro-Timer für Windows, der die Restzeit der aktuellen Ph
 ## Sprache
 
 **Overlay**:
-Das kleine, randlose Fenster ohne Titelleiste, das Restzeit und aktuelle Phase zeigt; die einzige sichtbare Oberfläche der App.
+Das kleine, randlose Fenster ohne Titelleiste, das Restzeit und aktuelle Phase zeigt; die einzige ständig sichtbare Oberfläche der App.
 _Vermeiden_: Widget, Popup, Hauptfenster
+
+**Einstellungsfenster**:
+Das normale Fenster mit Titelleiste, das man bei Bedarf über das Menü öffnet, um Dauern, Zyklus, automatischen Start, Hinweise und Theme einzustellen.
+_Vermeiden_: Optionen, Dialog
+
+**Einstellungsdatei**:
+Die Textdatei, die alle Einstellungen enthält, auch die, die man über Menü oder Maus ändert; sie lässt sich von Hand bearbeiten.
+_Vermeiden_: Config, Konfigurationsdatei
 
 **Immer-im-Vordergrund**:
 Ein an- und abschaltbarer Modus, in dem das Overlay über allen anderen Fenstern liegt; ausgeschaltet verhält es sich wie ein normales randloses Fenster.

@@ -2,7 +2,7 @@
 title: Sekundentakt bei ausgeblendetem Overlay
 labels: [wayfinder:prototype]
 status: open
-assignee:
+assignee: ckr
 blocked_by: []
 ---
 

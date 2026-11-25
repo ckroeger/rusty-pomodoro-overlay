@@ -1,0 +1,19 @@
+# PROTOTYP – Wegwerf-Code für das Ticket "Sekundentakt bei ausgeblendetem Overlay".
+# Nicht weiterentwickeln; die validierten Entscheidungen wandern in die SPEC.md.
+[package]
+name = "sekundentakt-prototyp"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[dependencies]
+eframe = { version = "0.37", default-features = false, features = ["glow", "default_fonts"] }
+raw-window-handle = "0.6"
+tray-icon = { version = "0.26", default-features = false }
+windows-sys = { version = "0.61", features = ["Win32_Foundation", "Win32_System_Threading"] }
+
+[profile.release]
+lto = true
+codegen-units = 1
+strip = true
+panic = "abort"

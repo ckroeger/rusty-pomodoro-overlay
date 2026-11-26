@@ -2,7 +2,7 @@
 title: SPEC.md zusammenschreiben
 labels: [wayfinder:task]
 status: open
-assignee:
+assignee: ckr
 blocked_by: [15]
 ---
 

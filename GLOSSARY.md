@@ -37,7 +37,7 @@ Die Phase konzentrierten Arbeitens (klassisch 25 Minuten).
 _Vermeiden_: Pomodoro (als Phasenname), Arbeitsphase, Sprint
 
 **Theme**:
-Ein benannter Satz visueller Einstellungen für das Overlay: Akzentfarbe je Phase, Hintergrund mit Deckkraft, Vordergrund- und gedämpfte Farbe, optional ein Hintergrundbild und ein Tray-Zeichen. Layout, Schrift und Größe gehören nicht dazu.
+Ein benannter Satz visueller Einstellungen für das Overlay: Akzentfarbe je Phase, Hintergrund mit Deckkraft, Vordergrund- und gedämpfte Farbe, eine von drei eingebauten Schriften, optional ein Hintergrundbild und ein Tray-Zeichen. Layout und Größe gehören nicht dazu.
 _Vermeiden_: Skin, Stil
 
 **Eingebautes Theme**:

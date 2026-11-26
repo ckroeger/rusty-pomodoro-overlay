@@ -63,3 +63,9 @@ Was legt ein Theme fest (Farben je Phase, Hintergrund-Transparenz, Schrift, Grö
 **Offene Fakten** stehen im Ticket [Bilddecoder und Tray-Zeichen rendern](13-bilddecoder-und-tray-zeichen.md).
 
 Verworfen: einheitliche Fenster-Deckkraft, wählbare oder beliebige Schriften, eigene Farben für Dimmung oder Phasenwort, eine eigene Deckkraft für das Bild, Bild strecken oder einpassen, eine Overlay-Form nach dem Bild, ein Tray-Zeichen je Phase, Datei-Watcher, Folgen des Windows-Modus.
+
+## Nachtrag (aus *[SPEC.md zusammenschreiben](16-spec-zusammenschreiben.md)*, 2026-11-26)
+
+Punkt 2 ist geändert: Die Schrift gehört **doch zum Theme**, als Feld `schrift` mit drei eingebauten Werten: `ubuntu` (Ubuntu Light aus egui, Voreinstellung, auch für *Dunkel*/*Hell*), `inter` (Inter mit eingefrorenem `tnum`) und `jetbrains_mono`. Beliebige Schriftdateien bleiben ausgeschlossen. Grund: Ubuntu Light ist bei kleiner Skalierung recht zart. Ein Theme wie Pip-Boy soll eine passende Schrift mitbringen können.
+
+Punkt 7 ist ebenfalls geändert: Der Theme-Ordner wird **im Sekundentakt** neu gelesen (nur Dateinamen und Änderungszeitpunkte, geparst wird nur Geändertes), nicht bei jedem Öffnen des Menüs. Grund: Das Tray-Menü öffnet `tray-icon` selbst, und solange es offen ist, steht die Event-Loop. Das Untermenü ist beim Öffnen also höchstens 1 s alt.

@@ -28,3 +28,7 @@ Begriffe (Zustände *läuft*/*angehalten*/*bereit*, *Zyklus*, *Zyklus-Fortschrit
 8. **Geänderte Werte** gelten erst ab der **nächsten Phase dieses Typs**, *Fokusphasen pro Zyklus* erst ab dem **nächsten Zyklus**. Die laufende Phase behält ihre Dauer. *Phase zurücksetzen* übernimmt die neue Dauer.
 
 Für die Architektur festgehalten: Die Timer-Logik bekommt eine injizierbare Uhr. Dadurch sind Sekunden-Dauern in der Konfiguration zum Testen nicht nötig.
+
+## Nachtrag (aus *[SPEC.md zusammenschreiben](16-spec-zusammenschreiben.md)*, 2026-11-26)
+
+Zu Punkt 8: Eine Phase im Zustand *bereit* hat noch nicht begonnen und übernimmt eine geänderte Dauer **sofort**. Ebenso gilt *Fokusphasen pro Zyklus* sofort, solange der Zyklus ganz am Anfang steht (Fokusphase 1 *bereit*, nichts erledigt). Phasen in *läuft* oder *angehalten* behalten ihre Dauer.

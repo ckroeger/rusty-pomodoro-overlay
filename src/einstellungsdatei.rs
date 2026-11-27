@@ -55,6 +55,28 @@ impl Default for Einstellungen {
     }
 }
 
+impl Einstellungen {
+    pub fn ablauf(&self) -> crate::ablauf::Ablaufeinstellungen {
+        let minuten = |m: u8| Duration::from_secs(u64::from(m) * 60);
+        crate::ablauf::Ablaufeinstellungen {
+            fokus: minuten(self.fokus_minuten),
+            kurze_pause: minuten(self.kurze_pause_minuten),
+            lange_pause: minuten(self.lange_pause_minuten),
+            fokusphasen_pro_zyklus: self.fokusphasen_pro_zyklus,
+            pause_automatisch: self.pause_automatisch_starten,
+            fokus_automatisch: self.fokus_automatisch_starten,
+        }
+    }
+
+    pub fn hinweisschalter(&self) -> crate::hinweis::Hinweisschalter {
+        crate::hinweis::Hinweisschalter {
+            ton: self.ton,
+            signal_im_overlay: self.signal_im_overlay,
+            einblenden: self.overlay_bei_phasenwechsel_einblenden,
+        }
+    }
+}
+
 /// Ein Fehler in der Einstellungsdatei; `text()` ist die Fassung fürs Menü.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Fehler {

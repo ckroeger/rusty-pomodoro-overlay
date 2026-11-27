@@ -1,6 +1,6 @@
 # SPEC: Rusty Pomodoro Overlay v1
 
-Stand: 2026-11-26 · Status: **Entwurf zur Durchsicht**
+Stand: 2026-11-27 · Status: **freigegeben**, mit Nachträgen aus der Umsetzung (5.1, 5.2)
 
 Diese Spec beschreibt v1 so, dass ein Agent oder ein Mensch sie **ohne Rückfragen** bauen kann. Begriffe in *Kursiv* stehen in [GLOSSARY.md](GLOSSARY.md) und werden genau so verwendet. Wie es zu den Entscheidungen kam, steht in der [Wayfinder-Karte](docs/wayfinder/pomodoro-overlay-spec/map.md), warum die GUI-Technik gewählt wurde, im [ADR 0001](docs/adr/0001-eframe-egui-mit-glow.md).
 
@@ -59,7 +59,7 @@ Hinweise:
 - Kein Crate darf `NvOptimusEnablement`/`AmdPowerXpressRequestHighPerformance` exportieren oder `nvapi`/`nvcuda`/`opencl` statisch einbinden.
 - Verboten in v1: `rodio`, `notify`, `windows` (windows-rs), Logging-Crates, `serde` für die Einstellungsdatei (gelesen wird mit `toml_edit`).
 
-`windows-sys`-Features: `Win32_Foundation`, `Win32_System_Threading` (Mutex, Event), `Win32_System_Registry` (Autostart), `Win32_UI_Shell` (`SHQueryUserNotificationState`, `ShellExecuteW`, `SetWindowSubclass`), `Win32_Media_Audio` (`PlaySoundW`), `Win32_UI_WindowsAndMessaging` (Fensterstile, `SetWindowPos`, `ShowWindow`, `MessageBoxW`, `GetSystemMetricsForDpi`), `Win32_Graphics_Gdi` (`MonitorFromRect`, `GetMonitorInfoW`), `Win32_UI_HiDpi` (`GetDpiForWindow`). Fehlt beim Bauen ein Feature, wird es ergänzt.
+`windows-sys`-Features: `Win32_Foundation`, `Win32_System_Threading` (Mutex, Event), `Win32_Security` (nötig für `CreateMutexW`/`CreateEventW`), `Win32_Graphics_Dwm` (Ecken, Rahmen), `Win32_UI_Input_KeyboardAndMouse` (`GetAsyncKeyState`), `Win32_System_Registry` (Autostart), `Win32_UI_Shell` (`SHQueryUserNotificationState`, `ShellExecuteW`, `SetWindowSubclass`), `Win32_Media_Audio` (`PlaySoundW`), `Win32_UI_WindowsAndMessaging` (Fensterstile, `SetWindowPos`, `ShowWindow`, `MessageBoxW`, `GetSystemMetricsForDpi`), `Win32_Graphics_Gdi` (`MonitorFromRect`, `GetMonitorInfoW`), `Win32_UI_HiDpi` (`GetDpiForWindow`). Fehlt beim Bauen ein Feature, wird es ergänzt.
 
 ### 2.3 Eingebettete Dateien
 
@@ -228,15 +228,16 @@ Bei Fehlern in den Einstellungen kommt eine zweite Zeile `⚠ Fehler in den Eins
 
 - Randlos (`with_decorations(false)`), transparent (`with_transparent(true)`, `clear_color` = `[0, 0, 0, 0]`), nicht in der Größe ziehbar (`with_resizable(false)`).
 - **Alpha pro Pixel:** Nur der Hintergrund ist durchsichtig, Ziffern, Punkte, Balken und Symbole sind immer deckend. Keine einheitliche Fenster-Deckkraft.
-- **Keine Taskleisten-Schaltfläche, nicht in Alt+Tab:** `WS_EX_TOOLWINDOW` am HWND (über `plattform`), dazu `with_taskbar(false)`.
-- **Nimmt sich nie selbst den Fokus**: nicht beim Start, nicht beim Phasenwechsel, nicht beim Einblenden. Das Fenster wird unsichtbar erzeugt (`with_visible(false)`, `with_active(false)`), im ersten `logic`-Aufruf positioniert und dann ohne Aktivierung gezeigt (`ShowWindow(SW_SHOWNOACTIVATE)` über `plattform`). Dasselbe gilt für jedes spätere Einblenden. Den Fokus bekommt das Overlay nur durch Klick, Ziehen oder Rechtsklick.
+- **Keine Taskleisten-Schaltfläche, nicht in Alt+Tab:** `WS_EX_TOOLWINDOW` am HWND (über `plattform`), dazu `with_taskbar(false)`. winit setzt den erweiterten Stil bei jeder eigenen Änderung (Immer-im-Vordergrund, Click-through, Sichtbarkeit) komplett neu und lässt `WS_EX_TOOLWINDOW` dabei weg. Deshalb fängt die Unterklasse der Fensterprozedur (dieselbe wie für `WM_ENDSESSION`, Abschnitt 10.4) `WM_STYLECHANGING` für `GWL_EXSTYLE` ab und erzwingt dort `WS_EX_TOOLWINDOW` ohne `WS_EX_APPWINDOW`.
+- **Ecken und Rahmen:** Die Ecken rundet Windows 11 (`DWMWA_WINDOW_CORNER_PREFERENCE` = `DWMWCP_ROUND`), die helle Rahmenlinie von Windows ist aus (`DWMWA_BORDER_COLOR` = `DWMWA_COLOR_NONE`). Das Overlay zeichnet seine Fläche eckig. Selbst gezeichnete runde Ecken gehen nicht: Pixel außerhalb davon erscheinen schwarz statt durchsichtig (gesehen auf NVIDIA RTX A2000 mit Intel UHD, Ursache unbekannt).
+- **Nimmt sich nie selbst den Fokus**: nicht beim Start, nicht beim Phasenwechsel, nicht beim Einblenden. Das Fenster wird unsichtbar erzeugt (`with_visible(false)`, `with_active(false)`) und im ersten `logic`-Aufruf positioniert. Zeigen tut es eframe nach dem ersten Bild selbst; wegen `with_active(false)` geschieht das ohne Aktivierung (`SW_SHOWNOACTIVATE`). Jedes spätere Ein- und Ausblenden läuft **nur** über `plattform` (`ShowWindow(SW_SHOWNOACTIVATE)` bzw. `SW_HIDE`), **nie** über `ViewportCommand::Visible`: winit zeigt ab dem zweiten Mal mit `SW_SHOW` und nimmt damit den Fokus, und sein eigener Merker käme aus dem Takt. Die App vergleicht in jedem Takt den Sollwert mit `IsWindowVisible`; so wird ein beim Start ausgeblendetes Overlay nach dem ersten Bild wieder versteckt (es kann ein Bild lang aufblitzen). Den Fokus bekommt das Overlay nur durch Klick, Ziehen oder Rechtsklick.
 - **Immer-im-Vordergrund** über `ViewportCommand::WindowLevel(AlwaysOnTop | Normal)`, auch zur Laufzeit. Voreinstellung an.
 - **Click-through** über `ViewportCommand::MousePassthrough(true/false)`, **erst zur Laufzeit** gesetzt, nie im `ViewportBuilder` (Workaround für egui #2537). Beim Start immer aus, wird nicht gespeichert. Bei aktivem Click-through wirken Mausrad und Klicks nicht.
 - **Alt+F4** auf dem Overlay wird verworfen: Kommt `close_requested` ohne gesetztes `beenden`-Flag, sendet die App `ViewportCommand::CancelClose`.
 
 ### 5.2 Elemente und Aufbau
 
-Grundgröße bei 100 %: **180 × 90 logische Pixel** (*Richtwert*), Ecken mit 10 px Radius (*Richtwert*). Von oben nach unten:
+Grundgröße bei 100 %: **180 × 90 logische Pixel** (*Richtwert*). Die Ecken rundet Windows (Abschnitt 5.1, 8 px bei 96 dpi, mit der Anzeigeskalierung, aber nicht mit der Skalierung des Overlays); der Balken hält 10 px Abstand zu den Seiten. Von oben nach unten:
 
 1. **Zeit**, groß und mittig, etwa 40 px Schrifthöhe (*Richtwert*). Links davon bei *angehalten* das Pausensymbol (zwei senkrechte Balken), bei *bereit* das Startsymbol (Dreieck nach rechts), in der Farbe der Zeit.
 2. **Phasenwort** darunter, etwa 13 px (*Richtwert*), in der *Akzentfarbe*: „Fokus“, „Pause“, „Lange Pause“.

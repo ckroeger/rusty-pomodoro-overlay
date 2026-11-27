@@ -6,6 +6,7 @@ description = "Pomodoro-Timer als randloses Overlay für Windows 11"
 publish = false
 
 [dependencies]
+toml_edit = "0.25"
 
 [profile.release]
 lto = true

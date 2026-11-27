@@ -2,7 +2,7 @@
 
 use std::time::{Duration, Instant};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Phase {
     Fokus,
     KurzePause,
@@ -59,10 +59,16 @@ pub struct Stand {
 /// Innerer Zustand mit den Zeitpunkten, aus denen alles berechnet wird.
 #[derive(Debug, Clone, Copy)]
 enum Lage {
-    Laeuft { ende: Instant },
-    Angehalten { rest: Duration },
+    Laeuft {
+        ende: Instant,
+    },
+    Angehalten {
+        rest: Duration,
+    },
     /// `abgelaufen_um` ist gesetzt, wenn *bereit* durch Ablauf der vorigen Phase entstand.
-    Bereit { abgelaufen_um: Option<Instant> },
+    Bereit {
+        abgelaufen_um: Option<Instant>,
+    },
 }
 
 pub struct Ablauf {
@@ -78,7 +84,9 @@ pub struct Ablauf {
 impl Ablauf {
     pub fn neu(einstellungen: Ablaufeinstellungen) -> Self {
         Self {
-            lage: Lage::Bereit { abgelaufen_um: None },
+            lage: Lage::Bereit {
+                abgelaufen_um: None,
+            },
             phase: Phase::Fokus,
             fokusphase: 1,
             erledigt: 0,
@@ -93,22 +101,32 @@ impl Ablauf {
         match befehl {
             Befehl::Primaeraktion => {
                 self.lage = match self.lage {
-                    Lage::Bereit { .. } => Lage::Laeuft { ende: jetzt + self.dauer },
-                    Lage::Laeuft { ende } => Lage::Angehalten { rest: ende.saturating_duration_since(jetzt) },
+                    Lage::Bereit { .. } => Lage::Laeuft {
+                        ende: jetzt + self.dauer,
+                    },
+                    Lage::Laeuft { ende } => Lage::Angehalten {
+                        rest: ende.saturating_duration_since(jetzt),
+                    },
                     Lage::Angehalten { rest } => Lage::Laeuft { ende: jetzt + rest },
                 }
             }
             Befehl::Ueberspringen => {
                 let automatisch = self.zur_naechsten_phase();
                 self.lage = if automatisch {
-                    Lage::Laeuft { ende: jetzt + self.dauer }
+                    Lage::Laeuft {
+                        ende: jetzt + self.dauer,
+                    }
                 } else {
-                    Lage::Bereit { abgelaufen_um: None }
+                    Lage::Bereit {
+                        abgelaufen_um: None,
+                    }
                 };
             }
             Befehl::PhaseZuruecksetzen => {
                 self.dauer = self.dauer_fuer(self.phase);
-                self.lage = Lage::Bereit { abgelaufen_um: None };
+                self.lage = Lage::Bereit {
+                    abgelaufen_um: None,
+                };
             }
             Befehl::NeuBeginnen => *self = Self::neu(self.einstellungen.clone()),
         }
@@ -127,9 +145,18 @@ impl Ablauf {
                 }
                 // Restzeit wird aufgerundet angezeigt: Sie springt, wenn der Bruchteil verbraucht ist.
                 let bruchteil = Duration::from_nanos((rest.as_nanos() % SEKUNDE.as_nanos()) as u64);
-                Some(jetzt + if bruchteil.is_zero() { SEKUNDE } else { bruchteil })
+                Some(
+                    jetzt
+                        + if bruchteil.is_zero() {
+                            SEKUNDE
+                        } else {
+                            bruchteil
+                        },
+                )
             }
-            Lage::Bereit { abgelaufen_um: Some(um) } => {
+            Lage::Bereit {
+                abgelaufen_um: Some(um),
+            } => {
                 let ueberzeit = jetzt.saturating_duration_since(um);
                 Some(um + Duration::from_secs(ueberzeit.as_secs() + 1))
             }
@@ -169,11 +196,18 @@ impl Ablauf {
             let von = self.phase;
             let automatisch = self.zur_naechsten_phase();
             self.lage = if automatisch {
-                Lage::Laeuft { ende: ende + self.dauer }
+                Lage::Laeuft {
+                    ende: ende + self.dauer,
+                }
             } else {
-                Lage::Bereit { abgelaufen_um: Some(ende) }
+                Lage::Bereit {
+                    abgelaufen_um: Some(ende),
+                }
             };
-            letztes = Some(Ereignis::PhaseAbgelaufen { von, nach: self.phase });
+            letztes = Some(Ereignis::PhaseAbgelaufen {
+                von,
+                nach: self.phase,
+            });
         }
         letztes.into_iter().collect()
     }
@@ -227,7 +261,9 @@ impl Ablauf {
             fokusphasen_im_zyklus: self.fokusphasen_im_zyklus,
             rest,
             ueberzeit: match self.lage {
-                Lage::Bereit { abgelaufen_um: Some(um) } => Some(jetzt.saturating_duration_since(um)),
+                Lage::Bereit {
+                    abgelaufen_um: Some(um),
+                } => Some(jetzt.saturating_duration_since(um)),
                 _ => None,
             },
             anteil,
@@ -308,7 +344,10 @@ mod tests {
 
         assert_eq!(
             ereignisse,
-            vec![Ereignis::PhaseAbgelaufen { von: Phase::Fokus, nach: Phase::KurzePause }]
+            vec![Ereignis::PhaseAbgelaufen {
+                von: Phase::Fokus,
+                nach: Phase::KurzePause
+            }]
         );
         let stand = ablauf.stand(t0 + minuten(27));
         assert_eq!(stand.phase, Phase::KurzePause);
@@ -330,7 +369,10 @@ mod tests {
 
         assert_eq!(
             ereignisse,
-            vec![Ereignis::PhaseAbgelaufen { von: Phase::KurzePause, nach: Phase::Fokus }]
+            vec![Ereignis::PhaseAbgelaufen {
+                von: Phase::KurzePause,
+                nach: Phase::Fokus
+            }]
         );
         let stand = ablauf.stand(t0 + minuten(37));
         assert_eq!(stand.phase, Phase::Fokus);
@@ -386,7 +428,12 @@ mod tests {
         use Phase::*;
         assert_eq!(
             phasenfolge(1, 4),
-            vec![(LangePause, 1, 1), (Fokus, 1, 0), (LangePause, 1, 1), (Fokus, 1, 0)]
+            vec![
+                (LangePause, 1, 1),
+                (Fokus, 1, 0),
+                (LangePause, 1, 1),
+                (Fokus, 1, 0)
+            ]
         );
     }
 
@@ -407,21 +454,36 @@ mod tests {
         // aus bereit: Fokus 1 → kurze Pause, läuft (Pause automatisch)
         assert_eq!(ablauf.befehl(Befehl::Ueberspringen, t0), vec![]);
         let stand = ablauf.stand(t0 + minuten(1));
-        assert_eq!((stand.phase, stand.zustand, stand.erledigt), (Phase::KurzePause, Zustand::Laeuft, 1));
+        assert_eq!(
+            (stand.phase, stand.zustand, stand.erledigt),
+            (Phase::KurzePause, Zustand::Laeuft, 1)
+        );
         assert_eq!(stand.rest, minuten(4));
 
         // aus läuft: kurze Pause → Fokus 2, bereit (Fokus nicht automatisch), ohne Überzeit
-        assert_eq!(ablauf.befehl(Befehl::Ueberspringen, t0 + minuten(1)), vec![]);
+        assert_eq!(
+            ablauf.befehl(Befehl::Ueberspringen, t0 + minuten(1)),
+            vec![]
+        );
         let stand = ablauf.stand(t0 + minuten(3));
-        assert_eq!((stand.phase, stand.zustand, stand.fokusphase), (Phase::Fokus, Zustand::Bereit, 2));
+        assert_eq!(
+            (stand.phase, stand.zustand, stand.fokusphase),
+            (Phase::Fokus, Zustand::Bereit, 2)
+        );
         assert_eq!(stand.ueberzeit, None);
 
         // aus angehalten: Fokus 2 → kurze Pause
         ablauf.befehl(Befehl::Primaeraktion, t0 + minuten(3));
         ablauf.befehl(Befehl::Primaeraktion, t0 + minuten(4));
-        assert_eq!(ablauf.befehl(Befehl::Ueberspringen, t0 + minuten(5)), vec![]);
+        assert_eq!(
+            ablauf.befehl(Befehl::Ueberspringen, t0 + minuten(5)),
+            vec![]
+        );
         let stand = ablauf.stand(t0 + minuten(5));
-        assert_eq!((stand.phase, stand.zustand, stand.erledigt), (Phase::KurzePause, Zustand::Laeuft, 2));
+        assert_eq!(
+            (stand.phase, stand.zustand, stand.erledigt),
+            (Phase::KurzePause, Zustand::Laeuft, 2)
+        );
         assert_eq!(stand.rest, minuten(5));
     }
 
@@ -435,7 +497,10 @@ mod tests {
         ablauf.befehl(Befehl::Ueberspringen, t0 + minuten(6));
 
         let stand = ablauf.stand(t0 + minuten(6));
-        assert_eq!((stand.phase, stand.zustand), (Phase::KurzePause, Zustand::Laeuft));
+        assert_eq!(
+            (stand.phase, stand.zustand),
+            (Phase::KurzePause, Zustand::Laeuft)
+        );
         assert_eq!(stand.ueberzeit, None);
     }
 
@@ -446,12 +511,18 @@ mod tests {
         ablauf.befehl(Befehl::Ueberspringen, t0); // kurze Pause nach 1
         ablauf.befehl(Befehl::Ueberspringen, t0); // Fokus 2 bereit
         ablauf.befehl(Befehl::Primaeraktion, t0); // Fokus 2 läuft
-        ablauf.einstellungen(Ablaufeinstellungen { fokus: minuten(50), ..voreinstellungen() });
+        ablauf.einstellungen(Ablaufeinstellungen {
+            fokus: minuten(50),
+            ..voreinstellungen()
+        });
 
         ablauf.befehl(Befehl::PhaseZuruecksetzen, t0 + minuten(10));
 
         let stand = ablauf.stand(t0 + minuten(20));
-        assert_eq!((stand.phase, stand.zustand), (Phase::Fokus, Zustand::Bereit));
+        assert_eq!(
+            (stand.phase, stand.zustand),
+            (Phase::Fokus, Zustand::Bereit)
+        );
         assert_eq!((stand.fokusphase, stand.erledigt), (2, 1));
         assert_eq!(stand.rest, minuten(50));
         assert_eq!(stand.ueberzeit, None);
@@ -473,8 +544,18 @@ mod tests {
         ablauf.befehl(Befehl::NeuBeginnen, t0 + minuten(1));
 
         let stand = ablauf.stand(t0 + minuten(2));
-        assert_eq!((stand.phase, stand.zustand), (Phase::Fokus, Zustand::Bereit));
-        assert_eq!((stand.fokusphase, stand.erledigt, stand.fokusphasen_im_zyklus), (1, 0, 6));
+        assert_eq!(
+            (stand.phase, stand.zustand),
+            (Phase::Fokus, Zustand::Bereit)
+        );
+        assert_eq!(
+            (
+                stand.fokusphase,
+                stand.erledigt,
+                stand.fokusphasen_im_zyklus
+            ),
+            (1, 0, 6)
+        );
         assert_eq!(stand.rest, minuten(40));
         assert_eq!(stand.ueberzeit, None);
     }
@@ -485,7 +566,10 @@ mod tests {
         let mut ablauf = Ablauf::neu(voreinstellungen());
 
         // bereit übernimmt sofort
-        ablauf.einstellungen(Ablaufeinstellungen { fokus: minuten(30), ..voreinstellungen() });
+        ablauf.einstellungen(Ablaufeinstellungen {
+            fokus: minuten(30),
+            ..voreinstellungen()
+        });
         assert_eq!(ablauf.stand(t0).rest, minuten(30));
 
         // laufende Phase behält ihre Dauer, auch angehalten
@@ -508,7 +592,10 @@ mod tests {
         assert_eq!(ablauf.stand(t0 + minuten(38)).rest, minuten(10));
 
         // bereit mit Überzeit übernimmt ebenfalls sofort
-        ablauf.einstellungen(Ablaufeinstellungen { fokus: minuten(20), ..voreinstellungen() });
+        ablauf.einstellungen(Ablaufeinstellungen {
+            fokus: minuten(20),
+            ..voreinstellungen()
+        });
         let stand = ablauf.stand(t0 + minuten(39));
         assert_eq!(stand.rest, minuten(20));
         assert_eq!(stand.ueberzeit, Some(minuten(1)));
@@ -520,7 +607,10 @@ mod tests {
         let mut ablauf = Ablauf::neu(voreinstellungen());
         ablauf.befehl(Befehl::Ueberspringen, t0); // kurze Pause nach 1
 
-        ablauf.einstellungen(Ablaufeinstellungen { fokusphasen_pro_zyklus: 2, ..voreinstellungen() });
+        ablauf.einstellungen(Ablaufeinstellungen {
+            fokusphasen_pro_zyklus: 2,
+            ..voreinstellungen()
+        });
 
         assert_eq!(ablauf.stand(t0).fokusphasen_im_zyklus, 4);
         for _ in 0..6 {
@@ -536,7 +626,10 @@ mod tests {
         let t0 = Instant::now();
         let mut ablauf = Ablauf::neu(voreinstellungen());
 
-        ablauf.einstellungen(Ablaufeinstellungen { fokusphasen_pro_zyklus: 6, ..voreinstellungen() });
+        ablauf.einstellungen(Ablaufeinstellungen {
+            fokusphasen_pro_zyklus: 6,
+            ..voreinstellungen()
+        });
 
         assert_eq!(ablauf.stand(t0).fokusphasen_im_zyklus, 6);
     }
@@ -544,7 +637,10 @@ mod tests {
     #[test]
     fn standby_ueber_mehrere_phasen_ergibt_genau_ein_ereignis_und_den_stand_wie_ohne_schlaf() {
         let t0 = Instant::now();
-        let mut ablauf = Ablauf::neu(Ablaufeinstellungen { fokus_automatisch: true, ..voreinstellungen() });
+        let mut ablauf = Ablauf::neu(Ablaufeinstellungen {
+            fokus_automatisch: true,
+            ..voreinstellungen()
+        });
         ablauf.befehl(Befehl::Primaeraktion, t0);
 
         // Fokus 1 (0–25), Pause (25–30), Fokus 2 (30–55), Pause (55–60), Fokus 3 ab 60
@@ -552,10 +648,16 @@ mod tests {
 
         assert_eq!(
             ereignisse,
-            vec![Ereignis::PhaseAbgelaufen { von: Phase::KurzePause, nach: Phase::Fokus }]
+            vec![Ereignis::PhaseAbgelaufen {
+                von: Phase::KurzePause,
+                nach: Phase::Fokus
+            }]
         );
         let stand = ablauf.stand(t0 + minuten(70));
-        assert_eq!((stand.phase, stand.zustand), (Phase::Fokus, Zustand::Laeuft));
+        assert_eq!(
+            (stand.phase, stand.zustand),
+            (Phase::Fokus, Zustand::Laeuft)
+        );
         assert_eq!((stand.fokusphase, stand.erledigt), (3, 2));
         assert_eq!(stand.rest, minuten(15));
     }
@@ -571,10 +673,16 @@ mod tests {
 
         assert_eq!(
             ereignisse,
-            vec![Ereignis::PhaseAbgelaufen { von: Phase::KurzePause, nach: Phase::Fokus }]
+            vec![Ereignis::PhaseAbgelaufen {
+                von: Phase::KurzePause,
+                nach: Phase::Fokus
+            }]
         );
         let stand = ablauf.stand(t0 + minuten(90));
-        assert_eq!((stand.phase, stand.zustand, stand.fokusphase), (Phase::Fokus, Zustand::Bereit, 2));
+        assert_eq!(
+            (stand.phase, stand.zustand, stand.fokusphase),
+            (Phase::Fokus, Zustand::Bereit, 2)
+        );
         assert_eq!(stand.ueberzeit, Some(minuten(60)));
     }
 
@@ -605,10 +713,16 @@ mod tests {
 
         assert_eq!(
             ereignisse,
-            vec![Ereignis::PhaseAbgelaufen { von: Phase::KurzePause, nach: Phase::Fokus }]
+            vec![Ereignis::PhaseAbgelaufen {
+                von: Phase::KurzePause,
+                nach: Phase::Fokus
+            }]
         );
         let stand = ablauf.stand(t0 + minuten(40));
-        assert_eq!((stand.phase, stand.zustand, stand.fokusphase), (Phase::Fokus, Zustand::Laeuft, 2));
+        assert_eq!(
+            (stand.phase, stand.zustand, stand.fokusphase),
+            (Phase::Fokus, Zustand::Laeuft, 2)
+        );
         assert_eq!(stand.rest, minuten(25));
     }
 
@@ -621,8 +735,14 @@ mod tests {
 
         ablauf.befehl(Befehl::Primaeraktion, t0);
         assert_eq!(ablauf.naechste_faelligkeit(t0), Some(t0 + ms(1000)));
-        assert_eq!(ablauf.naechste_faelligkeit(t0 + ms(300)), Some(t0 + ms(1000)));
-        assert_eq!(ablauf.naechste_faelligkeit(t0 + minuten(25) - ms(400)), Some(t0 + minuten(25)));
+        assert_eq!(
+            ablauf.naechste_faelligkeit(t0 + ms(300)),
+            Some(t0 + ms(1000))
+        );
+        assert_eq!(
+            ablauf.naechste_faelligkeit(t0 + minuten(25) - ms(400)),
+            Some(t0 + minuten(25))
+        );
 
         ablauf.befehl(Befehl::Primaeraktion, t0 + ms(1500));
         assert_eq!(ablauf.naechste_faelligkeit(t0 + ms(1500)), None);

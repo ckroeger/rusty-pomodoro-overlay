@@ -1,0 +1,32 @@
+# Rusty Pomodoro Overlay – Einstellungen
+# Die App liest diese Datei jede Sekunde neu, wenn sie sich geändert hat.
+# Ungültige Werte ersetzt sie durch die Voreinstellung und meldet das im Menü.
+# Wer ganz neu anfangen will, löscht diese Datei.
+
+# Dauer der Phasen in ganzen Minuten (1 bis 180)
+fokus_minuten = 25
+kurze_pause_minuten = 5
+lange_pause_minuten = 15
+
+# Fokusphasen pro Zyklus (1 bis 12); danach kommt die lange Pause
+fokusphasen_pro_zyklus = 4
+
+# Nächste Phase automatisch starten (true) oder bereit stellen (false)
+pause_automatisch_starten = true
+fokus_automatisch_starten = false
+
+# Hinweis, wenn eine Phase abläuft
+ton = true
+signal_im_overlay = true
+overlay_bei_phasenwechsel_einblenden = false
+
+# Theme: "dunkel", "hell" oder der Dateiname (ohne .toml) im Ordner themes
+theme = "dunkel"
+
+# Overlay
+immer_im_vordergrund = true
+overlay_anzeigen = true
+# Größe in Prozent (50 bis 300)
+skalierung = 100
+# Obere linke Ecke in Bildschirmpixeln; fehlt der Wert, erscheint das Overlay unten rechts
+# position = [1600, 900]

@@ -4,13 +4,14 @@ mod ablauf;
 mod anzeige;
 mod app;
 mod einstellungsdatei;
+mod grafik;
 mod hinweis;
-#[allow(dead_code)] // bis Tray und Menü stehen (Schritt 5)
 mod menue;
 mod overlay;
 mod plattform;
 mod theme;
 mod themeordner;
+mod tray;
 
 use eframe::egui;
 
@@ -49,7 +50,7 @@ fn main() {
         "rusty-pomodoro-overlay",
         optionen,
         // 4. Einstellungsdatei öffnen und Theme laden passiert in App::neu
-        Box::new(move |_cc| Ok(Box::new(app::App::neu(zeigen)))),
+        Box::new(move |cc| Ok(Box::new(app::App::neu(&cc.egui_ctx, zeigen)))),
     );
     if let Err(fehler) = ergebnis {
         plattform::meldung(&format!(

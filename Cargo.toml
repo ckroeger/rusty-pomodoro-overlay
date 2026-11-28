@@ -7,8 +7,12 @@ publish = false
 
 [dependencies]
 eframe = { version = "0.37", default-features = false, features = ["glow", "default_fonts"] }
+image = { version = "0.25", default-features = false, features = ["jpeg", "png"] }
 raw-window-handle = "0.6"
+skrifa = { version = "0.44", default-features = false, features = ["std", "autohint_shaping"] }
 toml_edit = "0.25"
+tray-icon = { version = "0.26", default-features = false }
+vello_cpu = { version = "0.2", default-features = false, features = ["std", "u8_pipeline", "f32_pipeline"] }
 windows-sys = { version = "0.61", features = [
     "Win32_Foundation",
     "Win32_Graphics_Dwm",

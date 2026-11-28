@@ -8,14 +8,17 @@ use eframe::egui::{self, FontFamily, ViewportCommand, WindowLevel};
 use windows_sys::Win32::Foundation::{HANDLE, HWND};
 
 use crate::ablauf::{Ablauf, Ereignis};
+use crate::anzeige::Trayschluessel;
 use crate::anzeige::{self, Anzeige};
 use crate::einstellungsdatei::{Aenderung, Einstellungen, Einstellungsdatei};
+use crate::grafik::{self, Hintergrund, Trayzeichner};
 use crate::hinweis::{Hinweis, Klang};
-use crate::menue::{Aktion, Laufzeitfehler, Schalter};
+use crate::menue::{self, Aktion, Laufzeitfehler, Menuemodell, Schalter, Schalterstand};
 use crate::overlay::{self, Eingabe, GRUNDGROESSE, Zeiger};
 use crate::plattform::{self, Rechteck};
-use crate::theme::{self, Schrift, Theme};
+use crate::theme::{self, Farben, Schrift, Theme};
 use crate::themeordner::Themeordner;
+use crate::tray::Tray;
 
 static FOKUS_ENDET: &[u8] = include_bytes!("../assets/fokus_endet.wav");
 static PAUSE_ENDET: &[u8] = include_bytes!("../assets/pause_endet.wav");
@@ -58,6 +61,15 @@ pub struct App {
     beenden: bool,
     /// `GL_RENDERER`, einmal beim Start gelesen
     grafik: String,
+
+    /// `None`, wenn sich das Tray-Icon nicht anlegen ließ
+    tray: Option<Tray>,
+    trayzeichner: Trayzeichner,
+    /// woraus das Tray-Icon zuletzt gezeichnet wurde
+    tray_gezeichnet: Option<(Trayschluessel, Farben, Option<String>, u32)>,
+    hintergrund: Hintergrund,
+    /// Klick auf das aktive Theme: Bild neu dekodieren
+    bild_neu_laden: bool,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -69,7 +81,7 @@ struct Fensterzustand {
 }
 
 impl App {
-    pub fn neu(zeigen_event: HANDLE) -> Self {
+    pub fn neu(ctx: &egui::Context, zeigen_event: HANDLE) -> Self {
         let ordner = app_ordner();
         let datei = Einstellungsdatei::oeffnen(&ordner);
         let mut themeordner = Themeordner::neu(&ordner.join("themes"));
@@ -79,7 +91,7 @@ impl App {
         let ablauf = Ablauf::neu(einstellungen.ablauf());
         let jetzt = Instant::now();
         let anzeige = anzeige::anzeige(&ablauf.stand(jetzt), &theme, 0.0, false);
-        Self {
+        let mut app = Self {
             ablauf,
             hinweis: Hinweis::default(),
             datei,
@@ -99,7 +111,73 @@ impl App {
             naechste_sekundenpruefung: jetzt,
             beenden: false,
             grafik: String::new(),
+            tray: None,
+            trayzeichner: Trayzeichner::neu(grafik::systemschriften()),
+            tray_gezeichnet: None,
+            hintergrund: Hintergrund::default(),
+            bild_neu_laden: false,
+        };
+        let modell = app.menuemodell(jetzt);
+        let icon = app.tray_icon();
+        app.tray = icon.and_then(|icon| Tray::neu(ctx, &modell, icon));
+        app
+    }
+
+    /// Das gemeinsame Menü aus dem aktuellen Stand (SPEC 4.4).
+    fn menuemodell(&self, jetzt: Instant) -> Menuemodell {
+        let (e, fehler) = self.datei.aktuell();
+        let einstellungsfehler: Vec<String> = fehler.iter().map(|f| f.text()).collect();
+        let mut themes = self.themeordner.liste();
+        if let Some(kaputt) = self.hintergrund.fehlgeschlagen() {
+            for t in &mut themes {
+                let bild = self
+                    .themeordner
+                    .theme(&t.schluessel)
+                    .and_then(|t| t.bild.as_deref());
+                t.bild_fehlt |= bild == Some(kaputt);
+            }
         }
+        menue::menue(
+            &self.ablauf.stand(jetzt),
+            Schalterstand {
+                immer_im_vordergrund: e.immer_im_vordergrund,
+                click_through: self.click_through,
+                overlay_anzeigen: e.overlay_anzeigen,
+                ton: e.ton,
+            },
+            &einstellungsfehler,
+            &self.laufzeitfehler,
+            &themes,
+            &self.aktives_theme,
+        )
+    }
+
+    /// Zeichnet das Tray-Icon neu, wenn sich Phase, Dimmen, Theme oder Größe geändert haben.
+    fn tray_icon(&mut self) -> Option<tray_icon::Icon> {
+        let groesse = plattform::tray_icon_groesse();
+        let schluessel = (
+            self.anzeige.tray,
+            self.theme.farben,
+            self.theme.tray_zeichen.clone(),
+            groesse,
+        );
+        if self.tray_gezeichnet.as_ref() == Some(&schluessel) {
+            return None;
+        }
+        let rgba = self.trayzeichner.icon(
+            self.theme.tray_zeichen.as_deref(),
+            self.anzeige.akzent,
+            groesse,
+        );
+        self.tray_gezeichnet = Some(schluessel);
+        tray_icon::Icon::from_rgba(rgba, groesse, groesse).ok()
+    }
+
+    /// Bildschirmpixel der Zielfläche fürs Hintergrundbild: 300 % × DPI (SPEC 7.5).
+    fn bildflaeche(&self) -> (u32, u32) {
+        let dpi = self.hwnd.map_or(1.0, plattform::dpi_faktor);
+        let seite = |n: f32| (n * 3.0 * dpi).round() as u32;
+        (seite(GRUNDGROESSE.x), seite(GRUNDGROESSE.y))
     }
 
     fn einstellungen(&self) -> &Einstellungen {
@@ -143,6 +221,7 @@ impl App {
             }
             Aktion::Umschalten(Schalter::Ton) => self.aendern(Aenderung::Ton(!e.ton), jetzt),
             Aktion::ThemeWaehlen(schluessel) => {
+                self.bild_neu_laden |= schluessel == self.aktives_theme;
                 self.aendern(Aenderung::Theme(schluessel), jetzt);
                 self.theme_anwenden();
             }
@@ -159,6 +238,15 @@ impl App {
             Aktion::EinstellungsfensterOeffnen => {} // Schritt 6
             Aktion::FehlerAusblenden(id) => self.laufzeitfehler.retain(|f| f.id != id),
             Aktion::Beenden => self.beenden = true,
+        }
+    }
+
+    /// Öffnet das gemeinsame Menü am Overlay; die Auswahl kommt als Menü-Ereignis.
+    fn menue_zeigen(&mut self, stelle: Option<egui::Pos2>, jetzt: Instant) {
+        let modell = self.menuemodell(jetzt);
+        if let (Some(tray), Some(hwnd)) = (&mut self.tray, self.hwnd) {
+            tray.menue_anwenden(&modell);
+            tray.menue_zeigen(hwnd, stelle.map(|p| (f64::from(p.x), f64::from(p.y))));
         }
     }
 
@@ -348,13 +436,16 @@ impl eframe::App for App {
             self.einrichten(frame);
         }
 
-        // 1. Eingaben
+        // 1. Eingaben: Menü und Tray, dann das Overlay
+        for aktion in self.tray.as_ref().map(Tray::aktionen).unwrap_or_default() {
+            self.ausfuehren(aktion, jetzt);
+        }
         for eingabe in std::mem::take(&mut self.eingaben) {
             match eingabe {
                 Eingabe::Aktion(aktion) => self.ausfuehren(aktion, jetzt),
                 Eingabe::Skalieren(n) => self.skalieren(n, jetzt),
                 Eingabe::ZiehenBegonnen => self.position_pruefen = true,
-                Eingabe::MenueOeffnen(_) => {} // Schritt 5
+                Eingabe::MenueOeffnen(stelle) => self.menue_zeigen(stelle, jetzt),
             }
         }
 
@@ -392,6 +483,11 @@ impl eframe::App for App {
         if self.position_pruefen {
             self.position_einhalten(jetzt);
         }
+        let flaeche = self.bildflaeche();
+        let neu_laden = std::mem::take(&mut self.bild_neu_laden);
+        self.hintergrund
+            .setzen(ctx, self.theme.bild.as_deref(), flaeche, neu_laden);
+        self.hintergrund.abholen(ctx);
 
         // 5. Anzeige
         let fehler = !self.datei.aktuell().1.is_empty() || !self.laufzeitfehler.is_empty();
@@ -401,6 +497,15 @@ impl eframe::App for App {
             self.hinweis.aufblinken(jetzt),
             fehler,
         );
+        let modell = self.menuemodell(jetzt);
+        let icon = self.tray_icon();
+        if let Some(tray) = &mut self.tray {
+            tray.tooltip_setzen(&self.anzeige.tooltip);
+            if let Some(icon) = icon {
+                tray.icon_setzen(icon);
+            }
+            tray.menue_anwenden(&modell);
+        }
 
         // Alt+F4 verwerfen, nur Beenden schließt (SPEC 5.1, 10.4)
         if ctx.input(|i| i.viewport().close_requested()) && !self.beenden {
@@ -431,12 +536,13 @@ impl eframe::App for App {
 
     fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
         let schrift = schriftfamilie(self.theme.schrift);
+        let bild = self.hintergrund.textur();
         let eingaben = if self.click_through {
             // bei Click-through wirken Klicks und Mausrad nicht
-            overlay::zeichnen(ui, &self.anzeige, &schrift, None, &mut Zeiger::default());
+            overlay::zeichnen(ui, &self.anzeige, &schrift, bild, &mut Zeiger::default());
             Vec::new()
         } else {
-            overlay::zeichnen(ui, &self.anzeige, &schrift, None, &mut self.zeiger)
+            overlay::zeichnen(ui, &self.anzeige, &schrift, bild, &mut self.zeiger)
         };
         if !eingaben.is_empty() {
             self.eingaben.extend(eingaben);

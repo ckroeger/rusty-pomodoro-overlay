@@ -21,7 +21,7 @@ use windows_sys::Win32::Media::Audio::{PlaySoundW, SND_ASYNC, SND_MEMORY, SND_NO
 use windows_sys::Win32::System::Threading::{
     CreateEventW, CreateMutexW, EVENT_MODIFY_STATE, OpenEventW, SetEvent, WaitForSingleObject,
 };
-use windows_sys::Win32::UI::HiDpi::GetDpiForWindow;
+use windows_sys::Win32::UI::HiDpi::{GetDpiForSystem, GetDpiForWindow, GetSystemMetricsForDpi};
 use windows_sys::Win32::UI::Input::KeyboardAndMouse::{
     GetAsyncKeyState, VK_LBUTTON, VK_MBUTTON, VK_RBUTTON,
 };
@@ -31,9 +31,9 @@ use windows_sys::Win32::UI::Shell::{
 };
 use windows_sys::Win32::UI::WindowsAndMessaging::{
     GWL_EXSTYLE, GetWindowLongPtrW, GetWindowRect, IsWindowVisible, MB_ICONERROR, MB_OK,
-    MessageBoxW, STYLESTRUCT, SW_HIDE, SW_SHOWNOACTIVATE, SW_SHOWNORMAL, SWP_NOACTIVATE,
-    SWP_NOZORDER, SetWindowLongPtrW, SetWindowPos, ShowWindow, WM_ENDSESSION, WM_STYLECHANGING,
-    WS_EX_APPWINDOW, WS_EX_TOOLWINDOW,
+    MessageBoxW, SM_CXSMICON, STYLESTRUCT, SW_HIDE, SW_SHOWNOACTIVATE, SW_SHOWNORMAL,
+    SWP_NOACTIVATE, SWP_NOZORDER, SetWindowLongPtrW, SetWindowPos, ShowWindow, WM_ENDSESSION,
+    WM_STYLECHANGING, WS_EX_APPWINDOW, WS_EX_TOOLWINDOW,
 };
 
 use crate::einstellungsdatei::Sicherung;
@@ -205,6 +205,12 @@ pub fn dpi_faktor(hwnd: HWND) -> f32 {
         0 => 1.0,
         dpi => dpi as f32 / 96.0,
     }
+}
+
+/// Kantenlänge des Tray-Icons in Pixeln (16/20/24/32 je nach Skalierung, SPEC 7.6).
+pub fn tray_icon_groesse() -> u32 {
+    let n = unsafe { GetSystemMetricsForDpi(SM_CXSMICON, GetDpiForSystem()) };
+    u32::try_from(n).ok().filter(|&n| n > 0).unwrap_or(16)
 }
 
 fn arbeitsbereich(monitor: *mut c_void) -> Option<Rechteck> {

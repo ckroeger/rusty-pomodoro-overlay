@@ -4,19 +4,20 @@
 use std::path::PathBuf;
 use std::time::{Duration, Instant};
 
-use eframe::egui::{self, FontFamily, ViewportCommand, WindowLevel};
+use eframe::egui::{self, ViewportCommand, WindowLevel};
 use windows_sys::Win32::Foundation::{HANDLE, HWND};
 
 use crate::ablauf::{Ablauf, Ereignis};
 use crate::anzeige::Trayschluessel;
 use crate::anzeige::{self, Anzeige};
 use crate::einstellungsdatei::{Aenderung, Einstellungen, Einstellungsdatei};
+use crate::einstellungsfenster::{Einstellungsfenster, Fensteraktion, Formular};
 use crate::grafik::{self, Hintergrund, Trayzeichner};
 use crate::hinweis::{Hinweis, Klang};
 use crate::menue::{self, Aktion, Laufzeitfehler, Menuemodell, Schalter, Schalterstand};
 use crate::overlay::{self, Eingabe, GRUNDGROESSE, Zeiger};
 use crate::plattform::{self, Rechteck};
-use crate::theme::{self, Farben, Schrift, Theme};
+use crate::theme::{self, Farben, Theme};
 use crate::themeordner::Themeordner;
 use crate::tray::Tray;
 
@@ -70,6 +71,11 @@ pub struct App {
     hintergrund: Hintergrund,
     /// Klick auf das aktive Theme: Bild neu dekodieren
     bild_neu_laden: bool,
+
+    fenster: Einstellungsfenster,
+    fensteraktionen: Vec<Fensteraktion>,
+    /// ob der Autostart-Eintrag existiert; gelesen beim Öffnen und nach dem Umschalten
+    autostart: bool,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -116,6 +122,9 @@ impl App {
             tray_gezeichnet: None,
             hintergrund: Hintergrund::default(),
             bild_neu_laden: false,
+            fenster: Einstellungsfenster::default(),
+            fensteraktionen: Vec::new(),
+            autostart: false,
         };
         let modell = app.menuemodell(jetzt);
         let icon = app.tray_icon();
@@ -235,10 +244,49 @@ impl App {
                     let _ = std::process::Command::new("notepad.exe").arg(&pfad).spawn();
                 }
             }
-            Aktion::EinstellungsfensterOeffnen => {} // Schritt 6
+            Aktion::EinstellungsfensterOeffnen => {
+                self.autostart = plattform::autostart_an();
+                self.fenster.oeffnen();
+            }
             Aktion::FehlerAusblenden(id) => self.laufzeitfehler.retain(|f| f.id != id),
             Aktion::Beenden => self.beenden = true,
         }
+    }
+
+    fn fensteraktion(&mut self, aktion: Fensteraktion, jetzt: Instant) {
+        match aktion {
+            Fensteraktion::Aendern(aenderung) => {
+                let theme = matches!(aenderung, Aenderung::Theme(_));
+                self.aendern(aenderung, jetzt);
+                if theme {
+                    self.theme_anwenden();
+                }
+            }
+            Fensteraktion::Autostart(an) => {
+                if !plattform::autostart_setzen(an) {
+                    self.laufzeitfehler("Autostart: Eintrag konnte nicht gesetzt werden");
+                }
+                self.autostart = plattform::autostart_an();
+            }
+            Fensteraktion::DateiOeffnen => self.ausfuehren(Aktion::EinstellungsdateiOeffnen, jetzt),
+            Fensteraktion::ThemeOrdnerOeffnen => self.ausfuehren(Aktion::ThemeOrdnerOeffnen, jetzt),
+        }
+    }
+
+    /// Die wählbaren Themes fürs Einstellungsfenster: wie im Menü, ohne kaputte.
+    fn waehlbare_themes(&self) -> Vec<(String, String)> {
+        let mut liste: Vec<(String, String)> = theme::eingebaute()
+            .into_iter()
+            .map(|(s, t)| (s.to_owned(), t.name))
+            .collect();
+        liste.extend(
+            self.themeordner
+                .liste()
+                .into_iter()
+                .filter(|t| t.zustand == theme::Themezustand::Gueltig)
+                .map(|t| (t.schluessel, t.name)),
+        );
+        liste
     }
 
     /// Öffnet das gemeinsame Menü am Overlay; die Auswahl kommt als Menü-Ereignis.
@@ -318,7 +366,7 @@ impl App {
             ctx.send_viewport_cmd(ViewportCommand::MousePassthrough(soll.click_through));
         }
         if ist.map(|z| z.skalierung) != Some(soll.skalierung) {
-            self.groesse_setzen(ctx, hwnd, soll.skalierung, ist.is_none());
+            self.groesse_setzen(hwnd, soll.skalierung, ist.is_none());
         }
         if plattform::ist_sichtbar(hwnd) != soll.sichtbar {
             // immer über plattform, damit es nie den Fokus nimmt (SPEC 5.1)
@@ -333,15 +381,8 @@ impl App {
 
     /// Größe aus Skalierung und DPI, um die Mitte herum. Beim ersten Mal an die gespeicherte
     /// bzw. die Startposition.
-    fn groesse_setzen(
-        &mut self,
-        ctx: &egui::Context,
-        hwnd: HWND,
-        skalierung: u16,
-        erstes_mal: bool,
-    ) {
+    fn groesse_setzen(&mut self, hwnd: HWND, skalierung: u16, erstes_mal: bool) {
         let faktor = f32::from(skalierung) / 100.0;
-        ctx.set_zoom_factor(faktor);
         let dpi = plattform::dpi_faktor(hwnd);
         let breite = (GRUNDGROESSE.x * faktor * dpi).round() as i32;
         let hoehe = (GRUNDGROESSE.y * faktor * dpi).round() as i32;
@@ -417,13 +458,6 @@ fn theme_aufloesen(ordner: &Themeordner, schluessel: &str) -> (Theme, String) {
     }
 }
 
-fn schriftfamilie(schrift: Schrift) -> FontFamily {
-    match schrift {
-        // Inter und JetBrains Mono kommen mit den Schriftdateien (Schritt 6)
-        Schrift::Ubuntu | Schrift::Inter | Schrift::JetbrainsMono => FontFamily::Proportional,
-    }
-}
-
 impl eframe::App for App {
     fn clear_color(&self, _visuals: &egui::Visuals) -> [f32; 4] {
         [0.0, 0.0, 0.0, 0.0] // Alpha pro Pixel
@@ -439,6 +473,9 @@ impl eframe::App for App {
         // 1. Eingaben: Menü und Tray, dann das Overlay
         for aktion in self.tray.as_ref().map(Tray::aktionen).unwrap_or_default() {
             self.ausfuehren(aktion, jetzt);
+        }
+        for aktion in std::mem::take(&mut self.fensteraktionen) {
+            self.fensteraktion(aktion, jetzt);
         }
         for eingabe in std::mem::take(&mut self.eingaben) {
             match eingabe {
@@ -507,6 +544,11 @@ impl eframe::App for App {
             tray.menue_anwenden(&modell);
         }
 
+        // ausgeblendet zeichnet eframe sonst nicht, und mit dem Overlay das Fenster nicht
+        if self.fenster.ist_offen() && !self.einstellungen().overlay_anzeigen {
+            ctx.send_viewport_cmd(ViewportCommand::RequestPaintWhileHidden);
+        }
+
         // Alt+F4 verwerfen, nur Beenden schließt (SPEC 5.1, 10.4)
         if ctx.input(|i| i.viewport().close_requested()) && !self.beenden {
             ctx.send_viewport_cmd(ViewportCommand::CancelClose);
@@ -535,18 +577,46 @@ impl eframe::App for App {
     }
 
     fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
-        let schrift = schriftfamilie(self.theme.schrift);
+        let schrift = crate::schriften::familie(self.theme.schrift);
         let bild = self.hintergrund.textur();
+        // die angewandte Größe, damit Zeichnung und Fenster zusammenpassen
+        let skala = self
+            .angewandt
+            .map_or(1.0, |z| f32::from(z.skalierung) / 100.0);
         let eingaben = if self.click_through {
             // bei Click-through wirken Klicks und Mausrad nicht
-            overlay::zeichnen(ui, &self.anzeige, &schrift, bild, &mut Zeiger::default());
+            overlay::zeichnen(
+                ui,
+                &self.anzeige,
+                &schrift,
+                skala,
+                bild,
+                &mut Zeiger::default(),
+            );
             Vec::new()
         } else {
-            overlay::zeichnen(ui, &self.anzeige, &schrift, bild, &mut self.zeiger)
+            overlay::zeichnen(ui, &self.anzeige, &schrift, skala, bild, &mut self.zeiger)
         };
         if !eingaben.is_empty() {
             self.eingaben.extend(eingaben);
             ui.ctx().request_repaint();
+        }
+
+        if self.fenster.ist_offen() {
+            let fehler: Vec<String> = self.datei.aktuell().1.iter().map(|f| f.text()).collect();
+            let themes = self.waehlbare_themes();
+            let formular = Formular {
+                einstellungen: self.datei.aktuell().0,
+                fehler: &fehler,
+                themes: &themes,
+                autostart: self.autostart,
+                grafik: &self.grafik,
+            };
+            let aktionen = self.fenster.zeigen(ui.ctx(), &formular);
+            if !aktionen.is_empty() || !self.fenster.ist_offen() {
+                self.fensteraktionen.extend(aktionen);
+                ui.ctx().request_repaint();
+            }
         }
     }
 }

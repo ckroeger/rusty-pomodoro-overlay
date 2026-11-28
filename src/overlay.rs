@@ -47,14 +47,18 @@ pub fn farbe(f: Farbe) -> Color32 {
 }
 
 /// Zeichnet die Anzeige auf die ganze Fläche und liefert die Eingaben dieses Bildes.
+/// `skala` ist die Skalierung des Overlays (1.0 = 100 %). Das Overlay skaliert selbst statt
+/// über `set_zoom_factor`, weil der Zoom auch das Einstellungsfenster träfe.
 pub fn zeichnen(
     ui: &mut egui::Ui,
     anzeige: &Anzeige,
     schrift: &FontFamily,
+    skala: f32,
     bild: Option<&TextureHandle>,
     zeiger: &mut Zeiger,
 ) -> Vec<Eingabe> {
-    let flaeche = Rect::from_min_size(Pos2::ZERO, GRUNDGROESSE);
+    let s = skala;
+    let flaeche = Rect::from_min_size(Pos2::ZERO, GRUNDGROESSE * s);
     let antwort = ui.interact(
         flaeche,
         egui::Id::unique("overlay"),
@@ -63,16 +67,16 @@ pub fn zeichnen(
     let maler = ui.painter();
 
     hintergrund(maler, flaeche, anzeige, bild);
-    zeit(maler, flaeche, anzeige, schrift);
+    zeit(maler, flaeche, anzeige, schrift, s);
     maler.text(
-        pos2(flaeche.center().x, 62.0),
+        pos2(flaeche.center().x, 62.0 * s),
         Align2::CENTER_CENTER,
         anzeige.phasenwort,
-        FontId::new(WORT_GROESSE, schrift.clone()),
+        FontId::new(WORT_GROESSE * s, schrift.clone()),
         farbe(anzeige.akzent),
     );
-    zyklus_punkte(maler, flaeche, anzeige);
-    balken(maler, flaeche, anzeige);
+    zyklus_punkte(maler, flaeche, anzeige, s);
+    balken(maler, flaeche, anzeige, s);
 
     eingaben(ui, &antwort, zeiger)
 }
@@ -106,20 +110,20 @@ fn hintergrund(
     }
 }
 
-fn zeit(maler: &egui::Painter, flaeche: Rect, anzeige: &Anzeige, schrift: &FontFamily) {
+fn zeit(maler: &egui::Painter, flaeche: Rect, anzeige: &Anzeige, schrift: &FontFamily, s: f32) {
     let farbe_zeit = farbe(anzeige.vordergrund);
-    let mitte = pos2(flaeche.center().x, 30.0);
+    let mitte = pos2(flaeche.center().x, 30.0 * s);
     let text = maler.text(
         mitte,
         Align2::CENTER_CENTER,
         &anzeige.zeit,
-        FontId::new(ZEIT_GROESSE, schrift.clone()),
+        FontId::new(ZEIT_GROESSE * s, schrift.clone()),
         farbe_zeit,
     );
     // Symbol links neben der Zeit, als Form gezeichnet
-    let groesse = 12.0;
+    let groesse = 12.0 * s;
     let symbol = Rect::from_center_size(
-        pos2(text.left() - 6.0 - groesse / 2.0, mitte.y),
+        pos2(text.left() - 6.0 * s - groesse / 2.0, mitte.y),
         Vec2::splat(groesse),
     );
     match anzeige.symbol {
@@ -142,34 +146,39 @@ fn zeit(maler: &egui::Painter, flaeche: Rect, anzeige: &Anzeige, schrift: &FontF
     }
 }
 
-fn zyklus_punkte(maler: &egui::Painter, flaeche: Rect, anzeige: &Anzeige) {
+fn zyklus_punkte(maler: &egui::Painter, flaeche: Rect, anzeige: &Anzeige, s: f32) {
     let anzahl = anzeige.punkte.len() as f32;
     if anzahl == 0.0 {
         return;
     }
     // bei vielen Punkten kleiner, damit sie in eine Zeile passen
-    let abstand = (140.0 / anzahl).min(14.0);
-    let radius = (abstand * 0.3).min(3.5);
-    let y = 76.0;
+    let abstand = (140.0 / anzahl).min(14.0) * s;
+    let radius = (abstand * 0.3).min(3.5 * s);
+    let y = 76.0 * s;
     let start = flaeche.center().x - abstand * (anzahl - 1.0) / 2.0;
     for (i, punkt) in anzeige.punkte.iter().enumerate() {
         let mitte = pos2(start + abstand * i as f32, y);
         let _ = match punkt {
             Punkt::Voll => maler.circle_filled(mitte, radius, farbe(anzeige.vordergrund)),
             Punkt::Leer => maler.circle_filled(mitte, radius, farbe(anzeige.gedaempft)),
-            Punkt::Hervorgehoben => {
-                maler.circle_stroke(mitte, radius - 0.6, Stroke::new(1.2, farbe(anzeige.akzent)))
-            }
+            Punkt::Hervorgehoben => maler.circle_stroke(
+                mitte,
+                radius - 0.6 * s,
+                Stroke::new(1.2 * s, farbe(anzeige.akzent)),
+            ),
         };
     }
 }
 
-fn balken(maler: &egui::Painter, flaeche: Rect, anzeige: &Anzeige) {
-    // Abstand zu den von Windows gerundeten Ecken
+fn balken(maler: &egui::Painter, flaeche: Rect, anzeige: &Anzeige, s: f32) {
+    // Abstand zu den von Windows gerundeten Ecken; die skalieren nicht mit dem Overlay
     let rand = ECKENABSTAND;
     let spur = Rect::from_min_max(
-        pos2(flaeche.left() + rand, flaeche.bottom() - BALKEN_HOEHE - 3.0),
-        pos2(flaeche.right() - rand, flaeche.bottom() - 3.0),
+        pos2(
+            flaeche.left() + rand,
+            flaeche.bottom() - (BALKEN_HOEHE + 3.0) * s,
+        ),
+        pos2(flaeche.right() - rand, flaeche.bottom() - 3.0 * s),
     );
     let rund = CornerRadius::same(1);
     maler.rect_filled(spur, rund, farbe(anzeige.gedaempft));

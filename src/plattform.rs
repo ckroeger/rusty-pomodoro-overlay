@@ -283,6 +283,58 @@ pub fn klang_abspielen(wav: &'static [u8]) {
     };
 }
 
+// --- Autostart (SPEC 10.3) ---------------------------------------------------------------
+
+const RUN_SCHLUESSEL: &str = r"Software\Microsoft\Windows\CurrentVersion\Run";
+const RUN_WERT: &str = "RustyPomodoroOverlay";
+
+/// Ob der Autostart-Eintrag existiert.
+pub fn autostart_an() -> bool {
+    use windows_sys::Win32::System::Registry::{HKEY_CURRENT_USER, RRF_RT_REG_SZ, RegGetValueW};
+    let ergebnis = unsafe {
+        RegGetValueW(
+            HKEY_CURRENT_USER,
+            breit(RUN_SCHLUESSEL).as_ptr(),
+            breit(RUN_WERT).as_ptr(),
+            RRF_RT_REG_SZ,
+            std::ptr::null_mut(),
+            std::ptr::null_mut(),
+            std::ptr::null_mut(),
+        )
+    };
+    ergebnis == 0
+}
+
+/// Legt den Eintrag mit dem Pfad der laufenden Exe an oder löscht ihn. Liefert, ob es geklappt hat.
+pub fn autostart_setzen(an: bool) -> bool {
+    use windows_sys::Win32::System::Registry::{
+        HKEY_CURRENT_USER, REG_SZ, RegDeleteKeyValueW, RegSetKeyValueW,
+    };
+    let schluessel = breit(RUN_SCHLUESSEL);
+    let wert = breit(RUN_WERT);
+    if !an {
+        let e =
+            unsafe { RegDeleteKeyValueW(HKEY_CURRENT_USER, schluessel.as_ptr(), wert.as_ptr()) };
+        // ERROR_FILE_NOT_FOUND: war schon weg
+        return e == 0 || e == 2;
+    }
+    let Ok(exe) = std::env::current_exe() else {
+        return false;
+    };
+    let daten = breit(&format!("\"{}\"", exe.display()));
+    let e = unsafe {
+        RegSetKeyValueW(
+            HKEY_CURRENT_USER,
+            schluessel.as_ptr(),
+            wert.as_ptr(),
+            REG_SZ,
+            daten.as_ptr().cast(),
+            (daten.len() * 2) as u32,
+        )
+    };
+    e == 0
+}
+
 // --- Shell -----------------------------------------------------------------------------
 
 /// Öffnet eine Datei mit dem Standardprogramm (`open`) bzw. einen Ordner im Explorer

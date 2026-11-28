@@ -4,11 +4,13 @@ mod ablauf;
 mod anzeige;
 mod app;
 mod einstellungsdatei;
+mod einstellungsfenster;
 mod grafik;
 mod hinweis;
 mod menue;
 mod overlay;
 mod plattform;
+mod schriften;
 mod theme;
 mod themeordner;
 mod tray;
@@ -50,7 +52,10 @@ fn main() {
         "rusty-pomodoro-overlay",
         optionen,
         // 4. Einstellungsdatei öffnen und Theme laden passiert in App::neu
-        Box::new(move |cc| Ok(Box::new(app::App::neu(&cc.egui_ctx, zeigen)))),
+        Box::new(move |cc| {
+            cc.egui_ctx.set_fonts(schriften::definitionen());
+            Ok(Box::new(app::App::neu(&cc.egui_ctx, zeigen)))
+        }),
     );
     if let Err(fehler) = ergebnis {
         plattform::meldung(&format!(

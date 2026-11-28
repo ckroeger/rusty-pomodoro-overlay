@@ -653,7 +653,7 @@ Kein Dateisystem-Trait. Datei-Tests laufen gegen ein temporäres Verzeichnis (`s
 
 ### 11.7 `plattform`, `grafik`, `tray`
 
-Freie Funktionen ohne Trait: Mutex/Event, Autostart (Registry), `stoeren_erlaubt()`, `klang_abspielen(&'static [u8])`, Fensterstile, `zeigen_ohne_fokus`, `fenster_rechteck`/`fenster_setzen`, Arbeitsbereich, Subclass für `WM_ENDSESSION`, `oeffnen(pfad)`, `MessageBoxW`. `grafik`: `theme_setzen(&Theme, max_flaeche_px)`, `hintergrund(ctx) -> Option<TextureHandle>`, `tray_icon(phase, gedimmt, &Theme, groesse) -> Icon` mit Zwischenspeicher.
+Freie Funktionen ohne Trait: Mutex/Event, Autostart (Registry), `stoeren_erlaubt()`, `klang_abspielen(&'static [u8])`, Fensterstile, `zeigen_ohne_fokus`, `fenster_rechteck`/`fenster_setzen`, Arbeitsbereich, Subclass für `WM_ENDSESSION`, `oeffnen(pfad)`, `MessageBoxW`. `grafik`: `Hintergrund` (`setzen(ctx, bild, flaeche, neu_laden)`, `abholen(ctx)`, `textur()`, `fehlgeschlagen()`) und `Trayzeichner::icon(tray_zeichen, farbe, groesse) -> RGBA` mit Zwischenspeicher der Maske. Die Farbe kommt fertig gedimmt aus `Anzeige.akzent`; das `Icon` baut die Schale. `tray`: `Tray` überträgt das `Menuemodell` (neu aufgebaut nur bei geänderter Aktionsfolge, sonst angeglichen), setzt Tooltip und Icon und liefert die angeklickten `Aktion`en.
 
 ---
 

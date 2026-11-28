@@ -83,10 +83,10 @@ Erzeugt werden sie einmalig mit `examples/klaenge_erzeugen.rs` (ohne zusätzlich
 | Schlüssel | Schrift | Herkunft |
 |---|---|---|
 | `ubuntu` | Ubuntu Light | `default_fonts` von egui, keine Zusatzdatei (Voreinstellung) |
-| `inter` | Inter Regular, `tnum` eingefroren | Inter 4.x von github.com/rsms/inter. *Inter* hat von sich aus proportionale Ziffern; ob egui das Feature `tnum` anwendet, ist nicht gesichert. Deshalb wird es einmalig fest eingebaut: `pyftfeatfreeze -f tnum -S -U Tnum Inter-Regular.ttf assets/Inter-Regular-tnum.ttf` (Paket `opentype-feature-freezer`). |
-| `jetbrains_mono` | JetBrains Mono Regular | 2.x von github.com/JetBrains/JetBrainsMono, ist ohnehin gleichbreit |
+| `inter` | Inter Regular, `tnum` eingefroren | Inter 4.x (eingecheckt: 4.1, `extras/ttf/Inter-Regular.ttf`) von github.com/rsms/inter. *Inter* hat von sich aus proportionale Ziffern; ob egui das Feature `tnum` anwendet, ist nicht gesichert. Deshalb wird es einmalig fest eingebaut: `pyftfeatfreeze -f tnum -S -U Tnum Inter-Regular.ttf assets/Inter-Regular-tnum.ttf` (Paket `opentype-feature-freezer`). |
+| `jetbrains_mono` | JetBrains Mono Regular | 2.x (eingecheckt: 2.304) von github.com/JetBrains/JetBrainsMono, ist ohnehin gleichbreit |
 
-- Vor dem Einchecken prüfen, dass die Ziffern und `+` in den beiden Dateien gleich breit sind (`hmtx`).
+- Dass die Ziffern und `+` in den beiden Dateien gleich breit sind, prüft ein Test in `schriften.rs` (Vorschubbreiten über `skrifa`).
 - Eingebunden über `egui::FontDefinitions` als eigene Familien `FontFamily::Name("inter")` bzw. `("jetbrains_mono")`, jeweils mit den egui-Standardschriften als Rückfall. Das Overlay nutzt für Zeit und Phasenwort die Familie des aktiven Themes. Das Einstellungsfenster bleibt bei der egui-Standardschrift.
 - Pausen- und Startsymbol werden als Formen gezeichnet, nicht als Zeichen.
 
@@ -268,7 +268,7 @@ Der Zustand hat kein eigenes Element. Das Layout ist fest.
 ### 5.5 Größe
 
 - Skalierung **50 % bis 300 %**, Voreinstellung 100 %, nur über **`Strg`+Mausrad**: **10 % pro Rastung**, proportional (inklusive Schrift, gleiches Seitenverhältnis), um die **Mitte** des Overlays herum. Kein Regler, keine Ziehränder.
-- Umsetzung: `ctx.set_zoom_factor(skalierung)` und neue Fenstergröße = Grundgröße × Skalierung × DPI-Faktor. Danach wird das Overlay in den Arbeitsbereich geschoben (Abschnitt 5.6).
+- Umsetzung: `overlay::zeichnen` bekommt den Faktor und skaliert Maße und Schriftgrößen selbst; neue Fenstergröße = Grundgröße × Skalierung × DPI-Faktor. Kein `ctx.set_zoom_factor`: Der Zoom gilt in egui für alle Viewports und träfe auch das Einstellungsfenster. Die Abstände des Balkens zu den Ecken skalieren nicht mit, weil Windows die Ecken rundet. Danach wird das Overlay in den Arbeitsbereich geschoben (Abschnitt 5.6).
 - Die Windows-Anzeigeskalierung (DPI) wird beachtet (Per-Monitor-DPI wie in winit).
 - Die Skalierung wird gespeichert (verzögert, Abschnitt 8.3).
 
@@ -693,7 +693,8 @@ Weitere:
 - `menue`: Ausgrau-Regeln, Primäraktion-Text, Häkchen, Fehlerzeile mit `(+n weitere)`, Theme-Untermenü (Reihenfolge, reserviert, Fehlerzusätze).
 - `theme::lesen`: Erben von *Dunkel*, ungültige und unbekannte Felder (auch `schrift = "comic_sans"` → `ubuntu`), Farbformate, Syntaxfehler mit Zeile.
 - `einstellungsdatei`: `lesen` mit jedem Fehlerfall aus 8.2; im temporären Verzeichnis: Anlegen der Vorlage, Kommentare bleiben beim Schreiben erhalten, atomares Schreiben, verzögertes Schreiben nach 1 s, kein Schreiben bei Syntaxfehler, Hand-Änderung wird erkannt, eigene Schreibvorgänge nicht.
-- `grafik`: Verkleinern auf die Zielfläche (nie vergrößern), Rückfall auf den Kreis bei U+F0000, leerem Feld und ZWJ-Folge.
+- `grafik`: Verkleinern auf die Zielfläche (nie vergrößern), Rückfall auf den Kreis bei U+F0000, leerem Feld und ZWJ-Folge (mit den Systemschriften), einige Pixel von Kreis und Zeichen.
+- `schriften`: Ziffern und `+` gleich breit in Inter und JetBrains Mono.
 
 ### 13.2 Manuelle Prüfliste
 
